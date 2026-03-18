@@ -77,11 +77,13 @@ export default function ProductDetail() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
         {/* Left: main image */}
         <div className="bg-zinc-100 rounded-2xl overflow-hidden aspect-square max-h-[420px]">
-          {product.imageUrl ? (
-            <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-zinc-300 text-6xl">✦</div>
-          )}
+          {(() => {
+            const src = (product.colorImages && selectedColor && product.colorImages[selectedColor])
+              || product.imageUrl
+            return src
+              ? <img src={src} alt={product.name} className="w-full h-full object-cover" />
+              : <div className="w-full h-full flex items-center justify-center text-zinc-300 text-6xl">✦</div>
+          })()}
         </div>
 
         {/* Right: product info */}

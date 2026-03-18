@@ -7,19 +7,19 @@ import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage'
 import { db, storage } from '../../firebase/config'
 
 const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL']
-const EMPTY = { name: '', price: '', category: '', description: '', stock: '', sizes: [], colors: '', imageUrl: '' }
+const EMPTY = { name: '', price: '', category: '', description: '', stock: '', sizes: [], colors: '', colorImages: {} }
 
 export default function ManageProducts() {
   const [products, setProducts] = useState([])
   const [form, setForm] = useState(EMPTY)
   const [editId, setEditId] = useState(null)
-  const [imageFile, setImageFile] = useState(null)
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
   const [loading, setLoading] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [uploadError, setUploadError] = useState('')
-  const fileRef = useRef()
+  const [uploadingColor, setUploadingColor] = useState(null)
+  const fileRefs = useRef({})
 
   async function loadProducts() {
     const q = query(collection(db, 'products'), orderBy('createdAt', 'desc'))
@@ -34,6 +34,10 @@ export default function ManageProducts() {
     setForm((f) => ({ ...f, [name]: value }))
   }
 
+  function handleColorImageUrl(color, url) {
+    setForm((f) => ({ ...f, colorImages: { ...f.colorImages, [color]: url } }))
+  }
+
   function toggleSize(size) {
     setForm((f) => ({
       ...f,
@@ -41,7 +45,11 @@ export default function ManageProducts() {
     }))
   }
 
-  async function uploadImage(file) {
+  function parsedColors() {
+    return form.colors ? form.colors.split(',').map(c => c.trim()).filter(Boolean) : []
+  }
+
+  async function uploadImageForColor(file, color) {
     return new Promise((resolve, reject) => {
       const storageRef = ref(storage, `products/${Date.now()}_${file.name}`)
       const task = uploadBytesResumable(storageRef, file)
@@ -54,29 +62,29 @@ export default function ManageProducts() {
     })
   }
 
+  async function handleFileUpload(color, file) {
+    if (!file) return
+    setUploadingColor(color)
+    setUploadError('')
+    try {
+      const url = await uploadImageForColor(file, color)
+      handleColorImageUrl(color, url)
+    } catch (err) {
+      setUploadError(`Upload failed for ${color}: ` + (err.message || ''))
+    }
+    setUploadingColor(null)
+  }
+
   async function handleSubmit(e) {
     e.preventDefault()
     setLoading(true)
     try {
-      let imageUrl = form.imageUrl
-
-      if (imageFile) {
-        setUploading(true)
-        setUploadError('')
-        try {
-          imageUrl = await uploadImage(imageFile)
-        } catch (uploadErr) {
-          setUploadError('Image upload failed: ' + (uploadErr.message || 'Check Firebase Storage is enabled and in test mode.'))
-          setUploading(false)
-          setLoading(false)
-          return
-        }
-        setUploading(false)
-      }
-
-      const colors = form.colors
-        ? form.colors.split(',').map((c) => c.trim()).filter(Boolean)
-        : []
+      const colors = parsedColors()
+      const colorImages = {}
+      colors.forEach(c => {
+        if (form.colorImages[c]) colorImages[c] = form.colorImages[c]
+      })
+      const imageUrl = colors.length > 0 ? (colorImages[colors[0]] || '') : ''
 
       const data = {
         name: form.name,
@@ -86,6 +94,7 @@ export default function ManageProducts() {
         stock: parseInt(form.stock) || 0,
         sizes: form.sizes,
         colors,
+        colorImages,
         imageUrl,
       }
 
@@ -97,9 +106,7 @@ export default function ManageProducts() {
 
       setForm(EMPTY)
       setEditId(null)
-      setImageFile(null)
       setShowForm(false)
-      fileRef.current.value = ''
       await loadProducts()
     } catch (err) {
       console.error(err)
@@ -117,7 +124,7 @@ export default function ManageProducts() {
       stock: product.stock,
       sizes: product.sizes || [],
       colors: (product.colors || []).join(', '),
-      imageUrl: product.imageUrl || '',
+      colorImages: product.colorImages || {},
     })
     setEditId(product.id)
     setShowForm(true)
@@ -129,6 +136,8 @@ export default function ManageProducts() {
     await deleteDoc(doc(db, 'products', id))
     await loadProducts()
   }
+
+  const colors = parsedColors()
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-12">
@@ -196,55 +205,69 @@ export default function ManageProducts() {
             </div>
           </div>
 
-          <div>
+          {/* Colors input */}
+          <div className="md:col-span-2">
             <label className="block text-sm text-gray-600 mb-1">Colors (comma-separated)</label>
             <input
               type="text"
               name="colors"
-              placeholder="Black, White, Navy"
+              placeholder="White, Black, Navy"
               value={form.colors}
               onChange={handleChange}
               className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-black"
             />
           </div>
 
-          <div className="md:col-span-2">
-            <label className="block text-sm text-gray-600 mb-1">Product Image</label>
-            <div className="flex gap-2 items-start">
-              <div className="flex-1">
-                <input
-                  type="text"
-                  name="imageUrl"
-                  placeholder="Paste image URL (e.g. https://...)"
-                  value={form.imageUrl}
-                  onChange={handleChange}
-                  className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-black"
-                />
-                <p className="text-xs text-gray-400 mt-1">Or upload a file:</p>
-                <input
-                  type="file"
-                  accept="image/*"
-                  ref={fileRef}
-                  onChange={(e) => setImageFile(e.target.files[0])}
-                  className="text-sm mt-1"
-                />
+          {/* Per-color image inputs */}
+          {colors.length > 0 && (
+            <div className="md:col-span-2">
+              <label className="block text-sm text-gray-600 mb-3">Product Images <span className="text-gray-400 font-normal">(one per color)</span></label>
+              <div className="space-y-4">
+                {colors.map((color) => (
+                  <div key={color} className="border border-gray-200 rounded-lg p-4">
+                    <p className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                      <span
+                        className="inline-block w-4 h-4 rounded-full border border-gray-300"
+                        style={{ backgroundColor: color.toLowerCase() }}
+                      />
+                      {color}
+                    </p>
+                    <div className="flex gap-3 items-start">
+                      <div className="flex-1">
+                        <input
+                          type="text"
+                          placeholder={`Image URL for ${color}`}
+                          value={form.colorImages[color] || ''}
+                          onChange={(e) => handleColorImageUrl(color, e.target.value)}
+                          className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-black"
+                        />
+                        <p className="text-xs text-gray-400 mt-1">Or upload a file:</p>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          ref={el => fileRefs.current[color] = el}
+                          onChange={(e) => handleFileUpload(color, e.target.files[0])}
+                          className="text-sm mt-1"
+                        />
+                        {uploadingColor === color && (
+                          <p className="text-xs text-gray-500 mt-1">Uploading… {progress}%</p>
+                        )}
+                      </div>
+                      {form.colorImages[color] && (
+                        <img
+                          src={form.colorImages[color]}
+                          alt={color}
+                          className="h-16 w-16 object-cover border shrink-0 rounded"
+                          onError={(e) => e.target.style.display = 'none'}
+                        />
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
-              {(form.imageUrl || imageFile) && (
-                <img
-                  src={imageFile ? URL.createObjectURL(imageFile) : form.imageUrl}
-                  alt="preview"
-                  className="h-16 w-16 object-cover border shrink-0"
-                  onError={(e) => e.target.style.display = 'none'}
-                />
-              )}
+              {uploadError && <p className="text-xs text-red-500 mt-2">{uploadError}</p>}
             </div>
-            {uploading && (
-              <div className="mt-2 text-xs text-gray-500">Uploading… {progress}%</div>
-            )}
-            {uploadError && (
-              <div className="mt-2 text-xs text-red-500">{uploadError}</div>
-            )}
-          </div>
+          )}
 
           <div className="md:col-span-2 flex justify-end gap-3 mt-2">
             <button
@@ -256,7 +279,7 @@ export default function ManageProducts() {
             </button>
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || uploadingColor !== null}
               className="px-5 py-2 text-sm bg-black text-white hover:bg-gray-800 transition-colors disabled:opacity-50"
             >
               {loading ? 'Saving…' : editId ? 'Update Product' : 'Add Product'}
