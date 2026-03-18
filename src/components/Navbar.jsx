@@ -21,10 +21,10 @@ export default function Navbar() {
   }, [])
 
   const ADMIN_LINKS = [
-    { to: '/admin',          icon: 'fa-gauge',        label: 'Dashboard' },
-    { to: '/admin/sales',    icon: 'fa-bag-shopping', label: 'Sales' },
-    { to: '/admin/products', icon: 'fa-boxes-stacked',label: 'Inventory' },
-    { to: '/admin/reports',  icon: 'fa-chart-pie',    label: 'Reports' },
+    { to: '/admin',          icon: 'fa-table-columns', label: 'Dashboard' },
+    { to: '/admin/sales',    icon: 'fa-receipt',       label: 'Sales' },
+    { to: '/admin/products', icon: 'fa-warehouse',     label: 'Inventory' },
+    { to: '/admin/reports',  icon: 'fa-chart-line',    label: 'Reports' },
   ]
 
   async function handleLogout() {
@@ -52,7 +52,7 @@ export default function Navbar() {
           {currentUser && <Link to="/orders" className={linkClass('/orders')}>Orders</Link>}
           {userRole === 'admin' && (
             <div className="relative" ref={adminRef}>
-              <button onClick={() => setAdminOpen(o => !o)} className={`text-sm transition-colors duration-200 flex items-center gap-1 ${location.pathname.startsWith('/admin') ? 'text-black font-medium' : 'text-zinc-500 hover:text-black'}`}>
+              <button onClick={() => setAdminOpen(o => !o)} className={`text-sm transition-colors duration-200 flex items-center gap-1 leading-none ${location.pathname.startsWith('/admin') ? 'text-black font-medium' : 'text-zinc-500 hover:text-black'}`}>
                 Admin
                 <i className={`fa-solid fa-chevron-down text-[10px] transition-transform duration-200 ${adminOpen ? 'rotate-180' : ''}`} />
               </button>
@@ -64,7 +64,7 @@ export default function Navbar() {
                   {ADMIN_LINKS.map(l => (
                     <Link key={l.to} to={l.to}
                       onClick={() => setAdminOpen(false)}
-                      className={`flex items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-zinc-50 ${location.pathname === l.to ? 'text-black font-medium' : 'text-zinc-500'}`}>
+                      className={`flex items-center gap-3 px-4 py-2 text-xs transition-colors hover:bg-zinc-50 ${location.pathname === l.to ? 'text-black font-medium' : 'text-zinc-500'}`}>
                       <i className={`fa-solid ${l.icon} text-xs w-4 text-center text-zinc-400`} />
                       {l.label}
                     </Link>
