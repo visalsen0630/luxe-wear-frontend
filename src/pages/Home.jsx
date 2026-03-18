@@ -71,22 +71,6 @@ export default function Home() {
         </section>
       )}
 
-      {/* Value Props */}
-      <section className="bg-zinc-50 py-16">
-        <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8">
-          {[
-            { icon: '🚚', title: 'Free Shipping', desc: 'On all orders over $100' },
-            { icon: '↩️', title: 'Easy Returns', desc: '30-day hassle-free returns' },
-            { icon: '✦', title: 'Sustainable', desc: 'Ethically sourced materials' },
-          ].map((item) => (
-            <div key={item.title} className="flex flex-col items-center text-center p-6 bg-white rounded-2xl shadow-sm">
-              <span className="text-2xl mb-3">{item.icon}</span>
-              <h3 className="font-semibold text-sm mb-1">{item.title}</h3>
-              <p className="text-sm text-zinc-500">{item.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
 
       {/* CTA Banner */}
       <section className="bg-black text-white py-20 text-center px-4">

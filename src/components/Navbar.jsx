@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useCart } from '../contexts/CartContext'
@@ -8,7 +8,24 @@ export default function Navbar() {
   const { itemCount } = useCart()
   const navigate = useNavigate()
   const location = useLocation()
-  const [menuOpen, setMenuOpen] = useState(false)
+  const [menuOpen,  setMenuOpen]  = useState(false)
+  const [adminOpen, setAdminOpen] = useState(false)
+  const adminRef = useRef(null)
+
+  useEffect(() => {
+    function handleClick(e) {
+      if (adminRef.current && !adminRef.current.contains(e.target)) setAdminOpen(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  const ADMIN_LINKS = [
+    { to: '/admin',          icon: 'fa-gauge',        label: 'Dashboard' },
+    { to: '/admin/sales',    icon: 'fa-bag-shopping', label: 'Sales' },
+    { to: '/admin/products', icon: 'fa-boxes-stacked',label: 'Inventory' },
+    { to: '/admin/reports',  icon: 'fa-chart-pie',    label: 'Reports' },
+  ]
 
   async function handleLogout() {
     await logout()
@@ -33,7 +50,29 @@ export default function Navbar() {
         <div className="hidden md:flex items-center gap-8">
           <Link to="/products" className={linkClass('/products')}>Shop</Link>
           {currentUser && <Link to="/orders" className={linkClass('/orders')}>Orders</Link>}
-          {userRole === 'admin' && <Link to="/admin" className={linkClass('/admin')}>Admin</Link>}
+          {userRole === 'admin' && (
+            <div className="relative" ref={adminRef}>
+              <button onClick={() => setAdminOpen(o => !o)} className={`text-sm transition-colors duration-200 flex items-center gap-1 ${location.pathname.startsWith('/admin') ? 'text-black font-medium' : 'text-zinc-500 hover:text-black'}`}>
+                Admin
+                <i className={`fa-solid fa-chevron-down text-[10px] transition-transform duration-200 ${adminOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {adminOpen && (
+                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-44 bg-white border border-zinc-200 rounded-2xl shadow-xl overflow-hidden z-50">
+                  <div className="px-3 py-2 border-b border-zinc-50">
+                    <p className="text-[10px] font-semibold tracking-widest uppercase text-zinc-400">Admin Panel</p>
+                  </div>
+                  {ADMIN_LINKS.map(l => (
+                    <Link key={l.to} to={l.to}
+                      onClick={() => setAdminOpen(false)}
+                      className={`flex items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-zinc-50 ${location.pathname === l.to ? 'text-black font-medium' : 'text-zinc-500'}`}>
+                      <i className={`fa-solid ${l.icon} text-xs w-4 text-center text-zinc-400`} />
+                      {l.label}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Right side */}
@@ -87,7 +126,18 @@ export default function Navbar() {
         <div className="md:hidden bg-white border-t border-zinc-100 px-4 py-4 space-y-3">
           <Link to="/products" onClick={() => setMenuOpen(false)} className="block text-sm text-zinc-600 hover:text-black">Shop</Link>
           {currentUser && <Link to="/orders" onClick={() => setMenuOpen(false)} className="block text-sm text-zinc-600 hover:text-black">Orders</Link>}
-          {userRole === 'admin' && <Link to="/admin" onClick={() => setMenuOpen(false)} className="block text-sm text-zinc-600 hover:text-black">Admin</Link>}
+          {userRole === 'admin' && (
+            <div className="space-y-1">
+              <p className="text-[10px] font-semibold tracking-widest uppercase text-zinc-400 px-1">Admin</p>
+              {ADMIN_LINKS.map(l => (
+                <Link key={l.to} to={l.to} onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-2 text-sm text-zinc-600 hover:text-black py-1">
+                  <i className={`fa-solid ${l.icon} text-xs w-4 text-center text-zinc-400`} />
+                  {l.label}
+                </Link>
+              ))}
+            </div>
+          )}
           {currentUser ? (
             <button onClick={handleLogout} className="block text-sm text-zinc-600 hover:text-black">Logout</button>
           ) : (

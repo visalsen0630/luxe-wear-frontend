@@ -12,9 +12,11 @@ import ProductDetail from './pages/ProductDetail'
 import Cart from './pages/Cart'
 import Checkout from './pages/Checkout'
 import OrderHistory from './pages/OrderHistory'
+import AdminLayout from './pages/admin/AdminLayout'
 import AdminPanel from './pages/admin/AdminPanel'
 import ManageProducts from './pages/admin/ManageProducts'
 import ManageOrders from './pages/admin/ManageOrders'
+import Reports from './pages/admin/Reports'
 import PaymentReturn from './pages/PaymentReturn'
 
 export default function App() {
@@ -42,15 +44,12 @@ export default function App() {
                 } />
 
                 {/* Admin routes */}
-                <Route path="/admin" element={
-                  <ProtectedRoute adminOnly><AdminPanel /></ProtectedRoute>
-                } />
-                <Route path="/admin/products" element={
-                  <ProtectedRoute adminOnly><ManageProducts /></ProtectedRoute>
-                } />
-                <Route path="/admin/orders" element={
-                  <ProtectedRoute adminOnly><ManageOrders /></ProtectedRoute>
-                } />
+                <Route path="/admin" element={<ProtectedRoute adminOnly><AdminLayout /></ProtectedRoute>}>
+                  <Route index element={<AdminPanel />} />
+                  <Route path="products"  element={<ManageProducts />} />
+                  <Route path="sales"     element={<ManageOrders />} />
+                  <Route path="reports"   element={<Reports />} />
+                </Route>
               </Routes>
             </main>
 
