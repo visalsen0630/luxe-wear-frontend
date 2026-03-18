@@ -54,8 +54,9 @@ export default function App() {
               </Routes>
             </main>
 
-            <footer className="border-t border-gray-100 py-6 text-center text-xs text-gray-400">
-              © {new Date().getFullYear()} Luxe Waer. All rights reserved.
+            <footer className="border-t border-zinc-100 py-8 text-center text-xs text-zinc-400">
+              <p className="font-medium tracking-widest uppercase text-zinc-600 mb-1">Luxe Wear</p>
+              <p>© {new Date().getFullYear()} Luxe Wear. All rights reserved.</p>
             </footer>
           </div>
         </CartProvider>
