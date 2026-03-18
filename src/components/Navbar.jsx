@@ -128,14 +128,21 @@ export default function Navbar() {
           {currentUser && <Link to="/orders" onClick={() => setMenuOpen(false)} className="block text-sm text-zinc-600 hover:text-black">Orders</Link>}
           {userRole === 'admin' && (
             <div className="space-y-1">
-              <p className="text-[10px] font-semibold tracking-widest uppercase text-zinc-400 px-1">Admin</p>
-              {ADMIN_LINKS.map(l => (
-                <Link key={l.to} to={l.to} onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-2 text-sm text-zinc-600 hover:text-black py-1">
-                  <i className={`fa-solid ${l.icon} text-xs w-4 text-center text-zinc-400`} />
-                  {l.label}
-                </Link>
-              ))}
+              <button onClick={() => setAdminOpen(o => !o)} className="flex items-center gap-1 text-sm text-zinc-600 hover:text-black w-full">
+                Admin
+                <i className={`fa-solid fa-chevron-down text-[10px] transition-transform duration-200 ${adminOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {adminOpen && (
+                <div className="pl-3 space-y-1 pt-1">
+                  {ADMIN_LINKS.map(l => (
+                    <Link key={l.to} to={l.to} onClick={() => { setMenuOpen(false); setAdminOpen(false) }}
+                      className="flex items-center gap-2 text-xs text-zinc-500 hover:text-black py-1">
+                      <i className={`fa-solid ${l.icon} text-[10px] w-4 text-center text-zinc-400`} />
+                      {l.label}
+                    </Link>
+                  ))}
+                </div>
+              )}
             </div>
           )}
           {currentUser ? (
