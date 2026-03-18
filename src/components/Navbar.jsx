@@ -8,8 +8,9 @@ export default function Navbar() {
   const { itemCount } = useCart()
   const navigate = useNavigate()
   const location = useLocation()
-  const [menuOpen,  setMenuOpen]  = useState(false)
-  const [adminOpen, setAdminOpen] = useState(false)
+  const [menuOpen,       setMenuOpen]       = useState(false)
+  const [adminOpen,      setAdminOpen]      = useState(false)
+  const [mobileAdminOpen, setMobileAdminOpen] = useState(false)
   const adminRef = useRef(null)
 
   useEffect(() => {
@@ -107,7 +108,7 @@ export default function Navbar() {
           </Link>
 
           {/* Mobile menu toggle */}
-          <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden text-zinc-600 hover:text-black">
+          <button onClick={() => { setMenuOpen(o => { if (o) setMobileAdminOpen(false); return !o }) }} className="md:hidden text-zinc-600 hover:text-black">
             {menuOpen ? (
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -128,14 +129,14 @@ export default function Navbar() {
           {currentUser && <Link to="/orders" onClick={() => setMenuOpen(false)} className="block text-sm text-zinc-600 hover:text-black">Orders</Link>}
           {userRole === 'admin' && (
             <div className="space-y-1">
-              <button onClick={() => setAdminOpen(o => !o)} className="flex items-center gap-1 text-sm text-zinc-600 hover:text-black w-full">
+              <button onClick={() => setMobileAdminOpen(o => !o)} className="flex items-center gap-1 text-sm text-zinc-600 hover:text-black w-full">
                 Admin
-                <i className={`fa-solid fa-chevron-down text-[10px] transition-transform duration-200 ${adminOpen ? 'rotate-180' : ''}`} />
+                <i className={`fa-solid fa-chevron-down text-[10px] transition-transform duration-200 ${mobileAdminOpen ? 'rotate-180' : ''}`} />
               </button>
-              {adminOpen && (
+              {mobileAdminOpen && (
                 <div className="pl-3 space-y-1 pt-1">
                   {ADMIN_LINKS.map(l => (
-                    <Link key={l.to} to={l.to} onClick={() => { setMenuOpen(false); setAdminOpen(false) }}
+                    <Link key={l.to} to={l.to} onClick={() => { setMenuOpen(false); setMobileAdminOpen(false) }}
                       className="flex items-center gap-2 text-xs text-zinc-500 hover:text-black py-1">
                       <i className={`fa-solid ${l.icon} text-[10px] w-4 text-center text-zinc-400`} />
                       {l.label}
