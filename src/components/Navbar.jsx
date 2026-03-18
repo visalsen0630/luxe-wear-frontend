@@ -65,8 +65,8 @@ export default function Navbar() {
                   {ADMIN_LINKS.map(l => (
                     <Link key={l.to} to={l.to}
                       onClick={() => setAdminOpen(false)}
-                      className={`flex items-center gap-3 px-4 py-2 text-xs transition-colors hover:bg-zinc-50 ${location.pathname === l.to ? 'text-black font-medium' : 'text-zinc-500'}`}>
-                      <i className={`fa-solid ${l.icon} text-xs w-4 text-center text-zinc-400`} />
+                      className={`flex items-center gap-3 px-4 py-2 text-sm transition-colors hover:bg-zinc-50 ${location.pathname === l.to ? 'text-zinc-700 font-medium' : 'text-zinc-400'}`}>
+                      <i className={`fa-solid ${l.icon} text-xs w-4 text-center text-zinc-300`} />
                       {l.label}
                     </Link>
                   ))}
@@ -137,8 +137,8 @@ export default function Navbar() {
                 <div className="pl-3 space-y-1 pt-1">
                   {ADMIN_LINKS.map(l => (
                     <Link key={l.to} to={l.to} onClick={() => { setMenuOpen(false); setMobileAdminOpen(false) }}
-                      className="flex items-center gap-2 text-xs text-zinc-500 hover:text-black py-1">
-                      <i className={`fa-solid ${l.icon} text-[10px] w-4 text-center text-zinc-400`} />
+                      className="flex items-center gap-2 text-sm text-zinc-400 hover:text-zinc-700 py-1">
+                      <i className={`fa-solid ${l.icon} text-xs w-4 text-center text-zinc-300`} />
                       {l.label}
                     </Link>
                   ))}
