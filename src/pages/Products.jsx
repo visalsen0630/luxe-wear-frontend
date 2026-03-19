@@ -59,7 +59,7 @@ export default function Products() {
   }
 
   const filtered = products.filter(p => {
-    if (gender && p.gender && p.gender !== gender) return false
+    if (gender && p.gender && p.gender !== gender && p.gender !== 'both') return false
     if (filterSize && !(p.sizes || []).includes(filterSize)) return false
     if (filterSub && p.category !== filterSub) return false
     if (filterAvail === 'instock'    && !(p.stock > 0)) return false

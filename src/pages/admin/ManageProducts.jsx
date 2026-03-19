@@ -8,11 +8,11 @@ import { db, storage } from '../../firebase/config'
 
 const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL']
 const SUBCATEGORIES = {
-  men:    ['T-Shirts', 'Shirts', 'Pants', 'Jackets', 'Shorts', 'Sweaters', 'Accessories'],
-  women:  ['Tops', 'Dresses', 'Pants', 'Jackets', 'Skirts', 'Sweaters', 'Accessories'],
-  unisex: ['T-Shirts', 'Shirts', 'Pants', 'Jackets', 'Shorts', 'Sweaters', 'Accessories'],
+  men:  ['T-Shirts', 'Shirts', 'Pants', 'Jackets', 'Shorts', 'Sweaters', 'Accessories'],
+  women:['Tops', 'Dresses', 'Pants', 'Jackets', 'Skirts', 'Sweaters', 'Accessories'],
+  both: ['T-Shirts', 'Shirts', 'Pants', 'Jackets', 'Shorts', 'Sweaters', 'Accessories'],
 }
-const EMPTY = { name: '', price: '', gender: 'unisex', category: '', description: '', colors: '', colorImages: {}, colorSizes: {} }
+const EMPTY = { name: '', price: '', gender: 'both', category: '', description: '', colors: '', colorImages: {}, colorSizes: {} }
 // colorSizes shape: { White: { XS: 10, S: 5 }, Black: { M: 3, L: 2 } }
 
 function convertDriveUrl(url) {
@@ -132,7 +132,7 @@ export default function ManageProducts() {
       const imageUrl = colors.length > 0 ? (colorImages[colors[0]] || '') : ''
 
       const data = { name: form.name.trim(), price: parseFloat(form.price),
-        gender: form.gender || 'unisex', category: form.category,
+        gender: form.gender || 'both', category: form.category,
         description: form.description, stock, sizes, colors, colorImages, colorSizes, imageUrl }
 
       if (editId) {
@@ -153,7 +153,7 @@ export default function ManageProducts() {
   function startEdit(product) {
     setForm({
       name: product.name, price: product.price,
-      gender: product.gender || 'unisex',
+      gender: product.gender || 'both',
       category: product.category || '', description: product.description || '',
       colors: (product.colors || []).join(', '),
       colorImages: product.colorImages || {},
@@ -205,7 +205,7 @@ export default function ManageProducts() {
             <label className="block text-sm text-gray-600 mb-1">Gender</label>
             <select name="gender" value={form.gender} onChange={handleChange}
               className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-black">
-              <option value="unisex">Unisex</option>
+              <option value="both">Both (Men &amp; Women)</option>
               <option value="men">Men</option>
               <option value="women">Women</option>
             </select>
