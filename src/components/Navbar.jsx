@@ -133,13 +133,13 @@ export default function Navbar() {
           </Link>
 
           {/* Mobile menu toggle */}
-          <button onClick={() => { setMenuOpen(o => { if (o) setMobileAdminOpen(false); return !o }) }} className="md:hidden text-zinc-600 hover:text-black">
+          <button onClick={() => { setMenuOpen(o => { if (o) { setMobileAdminOpen(false); setMobileShopOpen(false) } return !o }) }} className="md:hidden p-1 text-zinc-700 hover:text-black">
             {menuOpen ? (
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             ) : (
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             )}
@@ -149,40 +149,55 @@ export default function Navbar() {
 
       {/* Mobile menu */}
       {menuOpen && (
-        <div className="md:hidden bg-white border-t border-zinc-100 px-4 py-4 space-y-3">
-          <div className="space-y-1">
-            <button onClick={() => setMobileShopOpen(o => !o)} className="flex items-center gap-1 text-sm text-zinc-600 hover:text-black w-full">
+        <div className="md:hidden bg-white border-t border-zinc-100 divide-y divide-zinc-100">
+
+          {/* Shop row */}
+          <div>
+            <button onClick={() => setMobileShopOpen(o => !o)}
+              className="flex items-center justify-between w-full px-5 py-4 text-base font-medium text-zinc-800">
               Shop
-              <i className={`fa-solid fa-chevron-down text-[10px] transition-transform duration-200 ${mobileShopOpen ? 'rotate-180' : ''}`} />
+              <i className={`fa-solid fa-chevron-down text-xs text-zinc-400 transition-transform duration-200 ${mobileShopOpen ? 'rotate-180' : ''}`} />
             </button>
             {mobileShopOpen && (
-              <div className="pl-3 space-y-1 pt-1">
+              <div className="bg-zinc-50 border-t border-zinc-100">
                 {[
                   { to: '/products',              label: 'All Products' },
                   { to: '/products?gender=men',   label: 'Men' },
                   { to: '/products?gender=women', label: 'Women' },
                 ].map(l => (
-                  <Link key={l.to} to={l.to} onClick={() => { setMenuOpen(false); setMobileShopOpen(false) }}
-                    className="block text-sm text-zinc-400 hover:text-zinc-700 py-1">
+                  <Link key={l.to} to={l.to}
+                    onClick={() => { setMenuOpen(false); setMobileShopOpen(false) }}
+                    className="block px-8 py-3 text-base text-zinc-500 hover:text-black hover:bg-zinc-100 transition-colors">
                     {l.label}
                   </Link>
                 ))}
               </div>
             )}
           </div>
-          {currentUser && <Link to="/orders" onClick={() => setMenuOpen(false)} className="block text-sm text-zinc-600 hover:text-black">Orders</Link>}
+
+          {/* Orders */}
+          {currentUser && (
+            <Link to="/orders" onClick={() => setMenuOpen(false)}
+              className="flex items-center px-5 py-4 text-base font-medium text-zinc-800 hover:text-black">
+              Orders
+            </Link>
+          )}
+
+          {/* Admin row */}
           {userRole === 'admin' && (
-            <div className="space-y-1">
-              <button onClick={() => setMobileAdminOpen(o => !o)} className="flex items-center gap-1 text-sm text-zinc-600 hover:text-black w-full">
+            <div>
+              <button onClick={() => setMobileAdminOpen(o => !o)}
+                className="flex items-center justify-between w-full px-5 py-4 text-base font-medium text-zinc-800">
                 Admin
-                <i className={`fa-solid fa-chevron-down text-[10px] transition-transform duration-200 ${mobileAdminOpen ? 'rotate-180' : ''}`} />
+                <i className={`fa-solid fa-chevron-down text-xs text-zinc-400 transition-transform duration-200 ${mobileAdminOpen ? 'rotate-180' : ''}`} />
               </button>
               {mobileAdminOpen && (
-                <div className="pl-3 space-y-1 pt-1">
+                <div className="bg-zinc-50 border-t border-zinc-100">
                   {ADMIN_LINKS.map(l => (
-                    <Link key={l.to} to={l.to} onClick={() => { setMenuOpen(false); setMobileAdminOpen(false) }}
-                      className="flex items-center gap-2 text-sm text-zinc-400 hover:text-zinc-700 py-1">
-                      <i className={`fa-solid ${l.icon} text-xs w-4 text-center text-zinc-300`} />
+                    <Link key={l.to} to={l.to}
+                      onClick={() => { setMenuOpen(false); setMobileAdminOpen(false) }}
+                      className="flex items-center gap-3 px-8 py-3 text-base text-zinc-500 hover:text-black hover:bg-zinc-100 transition-colors">
+                      <i className={`fa-solid ${l.icon} text-sm w-5 text-center text-zinc-400`} />
                       {l.label}
                     </Link>
                   ))}
@@ -190,13 +205,27 @@ export default function Navbar() {
               )}
             </div>
           )}
+
+          {/* Auth */}
           {currentUser ? (
-            <button onClick={handleLogout} className="block text-sm text-zinc-600 hover:text-black">Logout</button>
+            <div>
+              <div className="px-5 py-3 text-sm text-zinc-400 truncate">{currentUser.displayName || currentUser.email}</div>
+              <button onClick={handleLogout}
+                className="flex items-center w-full px-5 py-4 text-base font-medium text-zinc-800 hover:text-black border-t border-zinc-100">
+                Logout
+              </button>
+            </div>
           ) : (
-            <>
-              <Link to="/login" onClick={() => setMenuOpen(false)} className="block text-sm text-zinc-600 hover:text-black">Login</Link>
-              <Link to="/signup" onClick={() => setMenuOpen(false)} className="block text-sm text-zinc-600 hover:text-black">Sign Up</Link>
-            </>
+            <div className="flex gap-3 px-5 py-4">
+              <Link to="/login" onClick={() => setMenuOpen(false)}
+                className="flex-1 text-center py-3 text-base font-medium border border-zinc-300 text-zinc-700 rounded-xl hover:border-black transition-colors">
+                Login
+              </Link>
+              <Link to="/signup" onClick={() => setMenuOpen(false)}
+                className="flex-1 text-center py-3 text-base font-medium bg-black text-white rounded-xl hover:bg-zinc-800 transition-colors">
+                Sign Up
+              </Link>
+            </div>
           )}
         </div>
       )}
