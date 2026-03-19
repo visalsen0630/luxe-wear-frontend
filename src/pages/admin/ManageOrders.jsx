@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { collection, getDocs, updateDoc, deleteDoc, doc, orderBy, query } from 'firebase/firestore'
+import { collection, getDocs, updateDoc, deleteDoc, doc, orderBy, query, where } from 'firebase/firestore'
 import { db } from '../../firebase/config'
 import { sendStatusUpdate } from '../../lib/email'
 
@@ -32,12 +32,33 @@ export default function ManageOrders() {
     setOrders((prev) => prev.filter((o) => o.id !== orderId))
   }
 
-  async function updateStatus(orderId, status) {
-    await updateDoc(doc(db, 'orders', orderId), { status })
-    setOrders((prev) => prev.map((o) => o.id === orderId ? { ...o, status } : o))
-    // Send status update email to customer (non-blocking)
+  async function deductInventory(items) {
+    for (const item of items) {
+      const { name, color, size, quantity } = item
+      if (!name || !color || !size || !quantity) continue
+      const snap = await getDocs(query(collection(db, 'products'), where('name', '==', name)))
+      if (snap.empty) continue
+      const productDoc = snap.docs[0]
+      const colorSizes = { ...(productDoc.data().colorSizes || {}) }
+      const colorData = { ...(colorSizes[color] || {}) }
+      colorData[size] = Math.max(0, (colorData[size] || 0) - quantity)
+      colorSizes[color] = colorData
+      const newStock = Object.values(colorSizes).reduce((sum, s) =>
+        sum + Object.values(s).reduce((a, q) => a + (q || 0), 0), 0)
+      await updateDoc(doc(db, 'products', productDoc.id), { colorSizes, stock: newStock })
+    }
+  }
+
+  async function updateStatus(orderId, newStatus) {
     const order = orders.find((o) => o.id === orderId)
-    if (order) sendStatusUpdate(order, status).catch(console.error)
+    if (!order) return
+    await updateDoc(doc(db, 'orders', orderId), { status: newStatus })
+    setOrders((prev) => prev.map((o) => o.id === orderId ? { ...o, status: newStatus } : o))
+    // Deduct inventory only when first marked as delivered
+    if (newStatus === 'delivered' && order.status !== 'delivered') {
+      deductInventory(order.items || []).catch(console.error)
+    }
+    sendStatusUpdate(order, newStatus).catch(console.error)
   }
 
   if (loading) return <div className="text-center py-24 text-gray-400">Loading…</div>
