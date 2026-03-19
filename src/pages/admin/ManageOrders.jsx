@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { collection, getDocs, updateDoc, deleteDoc, doc, orderBy, query, where } from 'firebase/firestore'
+import { collection, getDocs, getDoc, updateDoc, deleteDoc, doc, orderBy, query } from 'firebase/firestore'
 import { db } from '../../firebase/config'
 import { sendStatusUpdate } from '../../lib/email'
 
@@ -34,18 +34,18 @@ export default function ManageOrders() {
 
   async function deductInventory(items) {
     for (const item of items) {
-      const { name, color, size, quantity } = item
-      if (!name || !color || !size || !quantity) continue
-      const snap = await getDocs(query(collection(db, 'products'), where('name', '==', name)))
-      if (snap.empty) continue
-      const productDoc = snap.docs[0]
-      const colorSizes = { ...(productDoc.data().colorSizes || {}) }
+      const { id, color, size, quantity } = item
+      if (!id || !color || !size || !quantity) continue
+      const productRef = doc(db, 'products', id)
+      const snap = await getDoc(productRef)
+      if (!snap.exists()) continue
+      const colorSizes = { ...(snap.data().colorSizes || {}) }
       const colorData = { ...(colorSizes[color] || {}) }
       colorData[size] = Math.max(0, (colorData[size] || 0) - quantity)
       colorSizes[color] = colorData
       const newStock = Object.values(colorSizes).reduce((sum, s) =>
         sum + Object.values(s).reduce((a, q) => a + (q || 0), 0), 0)
-      await updateDoc(doc(db, 'products', productDoc.id), { colorSizes, stock: newStock })
+      await updateDoc(productRef, { colorSizes, stock: newStock })
     }
   }
 

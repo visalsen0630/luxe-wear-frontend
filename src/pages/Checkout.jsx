@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { collection, addDoc, updateDoc, doc, increment, serverTimestamp } from 'firebase/firestore'
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '../firebase/config'
 import { useCart } from '../contexts/CartContext'
 import { useAuth } from '../contexts/AuthContext'
@@ -80,14 +80,6 @@ export default function Checkout() {
         paymentMethod: 'aba_khqr',
         createdAt:     serverTimestamp(),
       })
-      // Deduct stock for each item
-      await Promise.all(
-        cart.map((item) =>
-          updateDoc(doc(db, 'products', item.id), {
-            stock: increment(-item.quantity),
-          })
-        )
-      )
       // Notify bot of payment submission (non-blocking)
       fetch('https://web-production-ab0b0.up.railway.app/payment', {
         method: 'POST',
