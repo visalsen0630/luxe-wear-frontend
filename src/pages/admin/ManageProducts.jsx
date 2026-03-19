@@ -26,6 +26,7 @@ export default function ManageProducts() {
   const [loading, setLoading]             = useState(false)
   const [showForm, setShowForm]           = useState(false)
   const [uploadError, setUploadError]     = useState('')
+  const [saveError, setSaveError]         = useState('')
   const [uploadingColor, setUploadingColor] = useState(null)
   const [progress, setProgress]           = useState(0)
   const fileRefs = useRef({})
@@ -102,9 +103,16 @@ export default function ManageProducts() {
 
   async function handleSubmit(e) {
     e.preventDefault()
+    setSaveError('')
+
+    // Client-side validation
+    if (!form.name.trim()) return setSaveError('Product name is required.')
+    if (!form.price || isNaN(parseFloat(form.price))) return setSaveError('A valid price is required.')
+    const colors = parsedColors()
+    if (colors.length === 0) return setSaveError('Add at least one color.')
+
     setLoading(true)
     try {
-      const colors = parsedColors()
       const colorImages = {}
       const colorSizes  = {}
       colors.forEach(c => {
@@ -113,16 +121,14 @@ export default function ManageProducts() {
           colorSizes[c] = form.colorSizes[c]
       })
 
-      // total stock = sum of all color+size qtys
       const stock = Object.values(colorSizes).reduce((sum, sizeMap) =>
         sum + Object.values(sizeMap).reduce((s, q) => s + (q || 0), 0), 0)
-
-      // all unique sizes across colors
       const sizes = [...new Set(colors.flatMap(c => Object.keys(colorSizes[c] || {})))]
       const imageUrl = colors.length > 0 ? (colorImages[colors[0]] || '') : ''
 
-      const data = { name: form.name, price: parseFloat(form.price), category: form.category,
-        description: form.description, stock, sizes, colors, colorImages, colorSizes, imageUrl }
+      const data = { name: form.name.trim(), price: parseFloat(form.price),
+        category: form.category, description: form.description,
+        stock, sizes, colors, colorImages, colorSizes, imageUrl }
 
       if (editId) {
         await updateDoc(doc(db, 'products', editId), data)
@@ -130,11 +136,11 @@ export default function ManageProducts() {
         await addDoc(collection(db, 'products'), { ...data, createdAt: serverTimestamp() })
       }
 
-      setForm(EMPTY); setEditId(null); setShowForm(false)
+      setForm(EMPTY); setEditId(null); setShowForm(false); setSaveError('')
       await loadProducts()
     } catch (err) {
-      console.error(err)
-      alert('Error saving product.')
+      console.error('Firestore error:', err)
+      setSaveError('Failed to save: ' + (err.message || 'Unknown error. Check console.'))
     }
     setLoading(false)
   }
@@ -183,9 +189,10 @@ export default function ManageProducts() {
           ].map(({ name, label, type = 'text', step }) => (
             <div key={name}>
               <label className="block text-sm text-gray-600 mb-1">{label}</label>
-              <input type={type} name={name} step={step} required={name !== 'category'}
+              <input type={type} name={name} step={step}
                 value={form[name]} onChange={handleChange}
-                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-black" />
+                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-black"
+              />
             </div>
           ))}
 
@@ -265,12 +272,23 @@ export default function ManageProducts() {
                   </div>
                 </div>
               ))}
-              {uploadError && <p className="text-xs text-red-500">{uploadError}</p>}
+            </div>
+          )}
+
+          {uploadError && (
+            <div className="md:col-span-2 bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-lg">
+              Upload error: {uploadError}
+            </div>
+          )}
+
+          {saveError && (
+            <div className="md:col-span-2 bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-lg">
+              {saveError}
             </div>
           )}
 
           <div className="md:col-span-2 flex justify-end gap-3 mt-2">
-            <button type="button" onClick={() => setShowForm(false)}
+            <button type="button" onClick={() => { setShowForm(false); setSaveError('') }}
               className="px-5 py-2 text-sm border border-gray-300 hover:border-black transition-colors">Cancel</button>
             <button type="submit" disabled={loading || uploadingColor !== null}
               className="px-5 py-2 text-sm bg-black text-white hover:bg-gray-800 transition-colors disabled:opacity-50">
