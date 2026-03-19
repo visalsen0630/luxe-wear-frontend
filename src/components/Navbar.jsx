@@ -8,14 +8,18 @@ export default function Navbar() {
   const { itemCount } = useCart()
   const navigate = useNavigate()
   const location = useLocation()
-  const [menuOpen,       setMenuOpen]       = useState(false)
-  const [adminOpen,      setAdminOpen]      = useState(false)
+  const [menuOpen,        setMenuOpen]        = useState(false)
+  const [adminOpen,       setAdminOpen]       = useState(false)
+  const [shopOpen,        setShopOpen]        = useState(false)
   const [mobileAdminOpen, setMobileAdminOpen] = useState(false)
+  const [mobileShopOpen,  setMobileShopOpen]  = useState(false)
   const adminRef = useRef(null)
+  const shopRef  = useRef(null)
 
   useEffect(() => {
     function handleClick(e) {
       if (adminRef.current && !adminRef.current.contains(e.target)) setAdminOpen(false)
+      if (shopRef.current  && !shopRef.current.contains(e.target))  setShopOpen(false)
     }
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
@@ -49,15 +53,28 @@ export default function Navbar() {
 
         {/* Desktop nav */}
         <div className="hidden md:flex items-center gap-8">
-          <Link to="/products" className={linkClass('/products')}>Shop</Link>
-          <Link to="/products?gender=men"
-            className={`text-sm transition-colors duration-200 ${new URLSearchParams(location.search).get('gender') === 'men' && location.pathname === '/products' ? 'text-black font-medium' : 'text-zinc-500 hover:text-black'}`}>
-            Men
-          </Link>
-          <Link to="/products?gender=women"
-            className={`text-sm transition-colors duration-200 ${new URLSearchParams(location.search).get('gender') === 'women' && location.pathname === '/products' ? 'text-black font-medium' : 'text-zinc-500 hover:text-black'}`}>
-            Women
-          </Link>
+          {/* Shop dropdown */}
+          <div className="relative" ref={shopRef}>
+            <button onClick={() => setShopOpen(o => !o)}
+              className={`text-sm transition-colors duration-200 flex items-center gap-1 leading-none ${location.pathname === '/products' ? 'text-black font-medium' : 'text-zinc-500 hover:text-black'}`}>
+              Shop
+              <i className={`fa-solid fa-chevron-down text-[10px] transition-transform duration-200 ${shopOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {shopOpen && (
+              <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-40 bg-white border border-zinc-200 rounded-2xl shadow-xl overflow-hidden z-50">
+                {[
+                  { to: '/products',          label: 'All Products' },
+                  { to: '/products?gender=men',   label: 'Men' },
+                  { to: '/products?gender=women', label: 'Women' },
+                ].map(l => (
+                  <Link key={l.to} to={l.to} onClick={() => setShopOpen(false)}
+                    className="block px-4 py-2.5 text-sm text-zinc-500 hover:text-black hover:bg-zinc-50 transition-colors">
+                    {l.label}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
           {currentUser && <Link to="/orders" className={linkClass('/orders')}>Orders</Link>}
           {userRole === 'admin' && (
             <div className="relative" ref={adminRef}>
@@ -133,9 +150,26 @@ export default function Navbar() {
       {/* Mobile menu */}
       {menuOpen && (
         <div className="md:hidden bg-white border-t border-zinc-100 px-4 py-4 space-y-3">
-          <Link to="/products" onClick={() => setMenuOpen(false)} className="block text-sm text-zinc-600 hover:text-black">Shop</Link>
-          <Link to="/products?gender=men" onClick={() => setMenuOpen(false)} className="block text-sm text-zinc-600 hover:text-black pl-3">Men</Link>
-          <Link to="/products?gender=women" onClick={() => setMenuOpen(false)} className="block text-sm text-zinc-600 hover:text-black pl-3">Women</Link>
+          <div className="space-y-1">
+            <button onClick={() => setMobileShopOpen(o => !o)} className="flex items-center gap-1 text-sm text-zinc-600 hover:text-black w-full">
+              Shop
+              <i className={`fa-solid fa-chevron-down text-[10px] transition-transform duration-200 ${mobileShopOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {mobileShopOpen && (
+              <div className="pl-3 space-y-1 pt-1">
+                {[
+                  { to: '/products',              label: 'All Products' },
+                  { to: '/products?gender=men',   label: 'Men' },
+                  { to: '/products?gender=women', label: 'Women' },
+                ].map(l => (
+                  <Link key={l.to} to={l.to} onClick={() => { setMenuOpen(false); setMobileShopOpen(false) }}
+                    className="block text-sm text-zinc-400 hover:text-zinc-700 py-1">
+                    {l.label}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
           {currentUser && <Link to="/orders" onClick={() => setMenuOpen(false)} className="block text-sm text-zinc-600 hover:text-black">Orders</Link>}
           {userRole === 'admin' && (
             <div className="space-y-1">
