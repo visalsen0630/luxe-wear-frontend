@@ -7,7 +7,12 @@ import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage'
 import { db, storage } from '../../firebase/config'
 
 const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL']
-const EMPTY = { name: '', price: '', category: '', description: '', colors: '', colorImages: {}, colorSizes: {} }
+const SUBCATEGORIES = {
+  men:    ['T-Shirts', 'Shirts', 'Pants', 'Jackets', 'Shorts', 'Sweaters', 'Accessories'],
+  women:  ['Tops', 'Dresses', 'Pants', 'Jackets', 'Skirts', 'Sweaters', 'Accessories'],
+  unisex: ['T-Shirts', 'Shirts', 'Pants', 'Jackets', 'Shorts', 'Sweaters', 'Accessories'],
+}
+const EMPTY = { name: '', price: '', gender: 'unisex', category: '', description: '', colors: '', colorImages: {}, colorSizes: {} }
 // colorSizes shape: { White: { XS: 10, S: 5 }, Black: { M: 3, L: 2 } }
 
 function convertDriveUrl(url) {
@@ -127,8 +132,8 @@ export default function ManageProducts() {
       const imageUrl = colors.length > 0 ? (colorImages[colors[0]] || '') : ''
 
       const data = { name: form.name.trim(), price: parseFloat(form.price),
-        category: form.category, description: form.description,
-        stock, sizes, colors, colorImages, colorSizes, imageUrl }
+        gender: form.gender || 'unisex', category: form.category,
+        description: form.description, stock, sizes, colors, colorImages, colorSizes, imageUrl }
 
       if (editId) {
         await updateDoc(doc(db, 'products', editId), data)
@@ -148,6 +153,7 @@ export default function ManageProducts() {
   function startEdit(product) {
     setForm({
       name: product.name, price: product.price,
+      gender: product.gender || 'unisex',
       category: product.category || '', description: product.description || '',
       colors: (product.colors || []).join(', '),
       colorImages: product.colorImages || {},
@@ -183,9 +189,8 @@ export default function ManageProducts() {
           <h2 className="md:col-span-2 font-medium mb-2">{editId ? 'Edit Product' : 'New Product'}</h2>
 
           {[
-            { name: 'name',     label: 'Product Name' },
-            { name: 'price',    label: 'Price ($)',       type: 'number', step: '0.01' },
-            { name: 'category', label: 'Category' },
+            { name: 'name',  label: 'Product Name' },
+            { name: 'price', label: 'Price ($)', type: 'number', step: '0.01' },
           ].map(({ name, label, type = 'text', step }) => (
             <div key={name}>
               <label className="block text-sm text-gray-600 mb-1">{label}</label>
@@ -195,6 +200,27 @@ export default function ManageProducts() {
               />
             </div>
           ))}
+
+          <div>
+            <label className="block text-sm text-gray-600 mb-1">Gender</label>
+            <select name="gender" value={form.gender} onChange={handleChange}
+              className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-black">
+              <option value="unisex">Unisex</option>
+              <option value="men">Men</option>
+              <option value="women">Women</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm text-gray-600 mb-1">Category</label>
+            <select name="category" value={form.category} onChange={handleChange}
+              className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-black">
+              <option value="">— Select —</option>
+              {(SUBCATEGORIES[form.gender] || SUBCATEGORIES.unisex).map(s => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+          </div>
 
           <div className="md:col-span-2">
             <label className="block text-sm text-gray-600 mb-1">Description</label>

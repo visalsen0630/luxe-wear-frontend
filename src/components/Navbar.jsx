@@ -50,6 +50,14 @@ export default function Navbar() {
         {/* Desktop nav */}
         <div className="hidden md:flex items-center gap-8">
           <Link to="/products" className={linkClass('/products')}>Shop</Link>
+          <Link to="/products?gender=men"
+            className={`text-sm transition-colors duration-200 ${new URLSearchParams(location.search).get('gender') === 'men' && location.pathname === '/products' ? 'text-black font-medium' : 'text-zinc-500 hover:text-black'}`}>
+            Men
+          </Link>
+          <Link to="/products?gender=women"
+            className={`text-sm transition-colors duration-200 ${new URLSearchParams(location.search).get('gender') === 'women' && location.pathname === '/products' ? 'text-black font-medium' : 'text-zinc-500 hover:text-black'}`}>
+            Women
+          </Link>
           {currentUser && <Link to="/orders" className={linkClass('/orders')}>Orders</Link>}
           {userRole === 'admin' && (
             <div className="relative" ref={adminRef}>
@@ -126,6 +134,8 @@ export default function Navbar() {
       {menuOpen && (
         <div className="md:hidden bg-white border-t border-zinc-100 px-4 py-4 space-y-3">
           <Link to="/products" onClick={() => setMenuOpen(false)} className="block text-sm text-zinc-600 hover:text-black">Shop</Link>
+          <Link to="/products?gender=men" onClick={() => setMenuOpen(false)} className="block text-sm text-zinc-600 hover:text-black pl-3">Men</Link>
+          <Link to="/products?gender=women" onClick={() => setMenuOpen(false)} className="block text-sm text-zinc-600 hover:text-black pl-3">Women</Link>
           {currentUser && <Link to="/orders" onClick={() => setMenuOpen(false)} className="block text-sm text-zinc-600 hover:text-black">Orders</Link>}
           {userRole === 'admin' && (
             <div className="space-y-1">
