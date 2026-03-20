@@ -93,10 +93,15 @@ export default function Checkout() {
         }),
       }).catch(console.error)
 
-      clearCart()
       // Send confirmation email (non-blocking)
       sendOrderConfirmation({ id: docRef.id, items: cart, total, contactInfo: form, userEmail: currentUser.email }).catch(console.error)
-      navigate('/orders', { state: { success: true } })
+      clearCart()
+      navigate('/order-success', {
+        state: {
+          orderId: docRef.id,
+          order: { contactInfo: form, items: cart, total, currency, txRef: txRef.trim() }
+        }
+      })
     } catch (err) {
       console.error(err)
       setError('Something went wrong. Please try again.')

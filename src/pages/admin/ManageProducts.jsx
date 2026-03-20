@@ -256,12 +256,19 @@ export default function ManageProducts() {
                         value={form.colorImages[color] || ''}
                         onChange={e => handleColorImageUrl(color, e.target.value)}
                         className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-black" />
-                      <p className="text-xs text-gray-400 mt-1">Or upload a file:</p>
-                      <input type="file" accept="image/*"
-                        ref={el => fileRefs.current[color] = el}
-                        onChange={e => handleFileUpload(color, e.target.files[0])}
-                        className="text-sm mt-1" />
-                      {uploadingColor === color && <p className="text-xs text-gray-500 mt-1">Uploading… {progress}%</p>}
+                      <div className="mt-2">
+                        <input type="file" accept="image/*"
+                          ref={el => fileRefs.current[color] = el}
+                          onChange={e => handleFileUpload(color, e.target.files[0])}
+                          className="hidden" />
+                        <button type="button"
+                          onClick={() => fileRefs.current[color]?.click()}
+                          disabled={uploadingColor === color}
+                          className="flex items-center gap-2 px-3 py-1.5 text-xs border border-gray-300 rounded hover:border-black transition-colors disabled:opacity-50">
+                          <i className="fa-solid fa-upload text-gray-400" />
+                          {uploadingColor === color ? `Uploading… ${progress}%` : 'Upload from Computer'}
+                        </button>
+                      </div>
                     </div>
                     {form.colorImages[color] && (
                       <img src={form.colorImages[color]} alt={color}

@@ -12,6 +12,7 @@ import ProductDetail from './pages/ProductDetail'
 import Cart from './pages/Cart'
 import Checkout from './pages/Checkout'
 import OrderHistory from './pages/OrderHistory'
+import OrderSuccess from './pages/OrderSuccess'
 import AdminLayout from './pages/admin/AdminLayout'
 import AdminPanel from './pages/admin/AdminPanel'
 import ManageProducts from './pages/admin/ManageProducts'
@@ -41,6 +42,9 @@ export default function App() {
                 } />
                 <Route path="/orders" element={
                   <ProtectedRoute><OrderHistory /></ProtectedRoute>
+                } />
+                <Route path="/order-success" element={
+                  <ProtectedRoute><OrderSuccess /></ProtectedRoute>
                 } />
 
                 {/* Admin routes */}
