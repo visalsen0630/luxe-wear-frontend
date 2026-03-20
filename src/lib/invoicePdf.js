@@ -91,10 +91,14 @@ export function downloadInvoicePDF(order) {
     headStyles: { fillColor: [10, 10, 10], textColor: 255, fontStyle: 'bold', fontSize: 8, cellPadding: 5 },
     footStyles: { fillColor: [245, 245, 245], textColor: [10, 10, 10], fontStyle: 'bold', fontSize: 11 },
     alternateRowStyles: { fillColor: [252, 252, 252] },
+    tableWidth: 'auto',
     columnStyles: {
-      0: { cellWidth: 65 },
-      4: { halign: 'right' },
-      5: { halign: 'right', fontStyle: 'bold' },
+      0: { cellWidth: 68, halign: 'left' },
+      1: { cellWidth: 28, halign: 'center' },
+      2: { cellWidth: 20, halign: 'center' },
+      3: { cellWidth: 18, halign: 'center' },
+      4: { cellWidth: 28, halign: 'right' },
+      5: { cellWidth: 28, halign: 'right', fontStyle: 'bold' },
     },
   })
 
