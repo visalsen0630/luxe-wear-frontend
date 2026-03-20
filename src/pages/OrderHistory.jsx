@@ -1,85 +1,117 @@
 import { useEffect, useState } from 'react'
-import { useLocation } from 'react-router-dom'
-import { collection, query, where, orderBy, getDocs } from 'firebase/firestore'
+import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore'
 import { db } from '../firebase/config'
 import { useAuth } from '../contexts/AuthContext'
+import { downloadInvoicePDF } from '../lib/invoicePdf'
 
 const STATUS_COLORS = {
-  pending: 'bg-yellow-100 text-yellow-700',
-  processing: 'bg-blue-100 text-blue-700',
-  shipped: 'bg-purple-100 text-purple-700',
-  delivered: 'bg-green-100 text-green-700',
+  pending:    'bg-yellow-100 text-yellow-700',
+  processing: 'bg-blue-100  text-blue-700',
+  shipped:    'bg-purple-100 text-purple-700',
+  delivered:  'bg-green-100  text-green-700',
+  cancelled:  'bg-red-100    text-red-600',
+}
+
+const STATUS_ICONS = {
+  pending:    'fa-clock',
+  processing: 'fa-gear',
+  shipped:    'fa-truck',
+  delivered:  'fa-circle-check',
+  cancelled:  'fa-circle-xmark',
 }
 
 export default function OrderHistory() {
   const { currentUser } = useAuth()
-  const { state } = useLocation()
-  const [orders, setOrders] = useState([])
+  const [orders, setOrders]   = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    async function load() {
-      const q = query(
-        collection(db, 'orders'),
-        where('userId', '==', currentUser.uid),
-        orderBy('createdAt', 'desc')
-      )
-      const snap = await getDocs(q)
-      setOrders(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
+    // Real-time listener — status updates instantly without refresh
+    const q = query(
+      collection(db, 'orders'),
+      where('userId', '==', currentUser.uid),
+      orderBy('createdAt', 'desc')
+    )
+    const unsub = onSnapshot(q, snap => {
+      setOrders(snap.docs.map(d => ({ id: d.id, ...d.data() })))
       setLoading(false)
-    }
-    load()
+    })
+    return unsub
   }, [currentUser])
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-12">
-      <h1 className="text-3xl font-light tracking-tight mb-2">Order History</h1>
-
-      {state?.success && (
-        <div className="bg-green-50 text-green-700 px-4 py-3 rounded text-sm mb-6">
-          Your order has been placed successfully!
-        </div>
-      )}
+      <h1 className="text-3xl font-light tracking-tight mb-8">My Orders</h1>
 
       {loading ? (
-        <div className="text-center py-24 text-gray-400">Loading…</div>
+        <div className="text-center py-24 text-zinc-400">Loading…</div>
       ) : orders.length === 0 ? (
-        <div className="text-center py-24 text-gray-400">No orders yet.</div>
+        <div className="text-center py-24 text-zinc-400">No orders yet.</div>
       ) : (
-        <div className="space-y-6">
-          {orders.map((order) => (
-            <div key={order.id} className="border border-gray-200 p-6">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <p className="text-xs text-gray-400 font-mono">#{order.id.slice(-8).toUpperCase()}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    {order.createdAt?.toDate
-                      ? order.createdAt.toDate().toLocaleDateString()
-                      : 'Pending'}
-                  </p>
-                </div>
-                <span className={`text-xs px-2 py-1 rounded capitalize ${STATUS_COLORS[order.status] || 'bg-gray-100 text-gray-600'}`}>
-                  {order.status}
-                </span>
-              </div>
+        <div className="space-y-5">
+          {orders.map(order => {
+            const date = order.createdAt?.toDate
+              ? order.createdAt.toDate().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+              : '—'
+            const status  = order.status || 'pending'
+            const total   = order.currency === 'khr'
+              ? `៛${Math.round(Number(order.total) * 4100).toLocaleString()}`
+              : `$${Number(order.total).toFixed(2)}`
 
-              <div className="divide-y divide-gray-100">
-                {order.items?.map((item, i) => (
-                  <div key={i} className="flex justify-between py-2 text-sm">
-                    <p>
-                      {item.name} — {item.color} / {item.size} × {item.quantity}
-                    </p>
-                    <p>${(item.price * item.quantity).toFixed(2)}</p>
+            return (
+              <div key={order.id} className="bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-sm">
+
+                {/* Order header */}
+                <div className="px-6 py-4 flex flex-wrap items-center justify-between gap-3 border-b border-zinc-100">
+                  <div className="flex items-center gap-4">
+                    <div>
+                      <p className="font-mono text-sm font-semibold text-zinc-800">
+                        #{order.id.slice(-8).toUpperCase()}
+                      </p>
+                      <p className="text-xs text-zinc-400 mt-0.5">{date}</p>
+                    </div>
                   </div>
-                ))}
-              </div>
 
-              <div className="flex justify-between mt-4 font-medium text-sm border-t border-gray-100 pt-3">
-                <span>Total</span>
-                <span>${Number(order.total).toFixed(2)}</span>
+                  {/* Status badge */}
+                  <span className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full capitalize ${STATUS_COLORS[status] || 'bg-zinc-100 text-zinc-600'}`}>
+                    <i className={`fa-solid ${STATUS_ICONS[status] || 'fa-circle'} text-[10px]`} />
+                    {status}
+                  </span>
+                </div>
+
+                {/* Items */}
+                <div className="px-6 py-3 divide-y divide-zinc-50">
+                  {order.items?.map((item, i) => (
+                    <div key={i} className="flex justify-between py-2.5 text-sm">
+                      <div>
+                        <p className="font-medium text-zinc-800">{item.name}</p>
+                        <p className="text-xs text-zinc-400 mt-0.5">
+                          {item.color} · {item.size} · ×{item.quantity || item.qty || 1}
+                        </p>
+                      </div>
+                      <p className="text-zinc-700 font-medium">
+                        ${(Number(item.price) * (item.quantity || item.qty || 1)).toFixed(2)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Footer: total + download */}
+                <div className="px-6 py-4 bg-zinc-50 border-t border-zinc-100 flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs text-zinc-400">Total</p>
+                    <p className="font-bold text-zinc-900 text-lg">{total}</p>
+                  </div>
+                  <button
+                    onClick={() => downloadInvoicePDF(order)}
+                    className="flex items-center gap-2 px-4 py-2 text-xs font-medium border border-zinc-300 rounded-xl hover:border-black hover:text-black transition-colors text-zinc-600">
+                    <i className="fa-solid fa-file-pdf text-zinc-400" />
+                    Download Invoice
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>

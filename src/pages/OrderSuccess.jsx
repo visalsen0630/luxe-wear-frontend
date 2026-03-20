@@ -1,14 +1,10 @@
 import { useLocation, Link } from 'react-router-dom'
-import { useRef } from 'react'
-import jsPDF from 'jspdf'
-import autoTable from 'jspdf-autotable'
+import { downloadInvoicePDF } from '../lib/invoicePdf'
 
 const USD_TO_KHR = 4100
 
 export default function OrderSuccess() {
   const { state } = useLocation()
-  const invoiceRef = useRef()
-
   if (!state?.order) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
@@ -28,100 +24,6 @@ export default function OrderSuccess() {
     ? `$${Number(total).toFixed(2)}`
     : `៛${Math.round(Number(total) * USD_TO_KHR).toLocaleString()}`
 
-  function downloadPDF() {
-    const doc = new jsPDF({ unit: 'mm', format: 'a4' })
-    const W = doc.internal.pageSize.getWidth()
-
-    // Dark header
-    doc.setFillColor(10, 10, 10)
-    doc.rect(0, 0, W, 48, 'F')
-
-    // Brand
-    doc.setTextColor(255, 255, 255)
-    doc.setFontSize(20)
-    doc.setFont('helvetica', 'bold')
-    doc.text('LUXE WEAR', 14, 18)
-    doc.setFontSize(8)
-    doc.setFont('helvetica', 'normal')
-    doc.setTextColor(160, 160, 160)
-    doc.text('Premium Fashion · Cambodia', 14, 25)
-
-    // Invoice label
-    doc.setFontSize(20)
-    doc.setFont('helvetica', 'bold')
-    doc.setTextColor(255, 255, 255)
-    doc.text('INVOICE', W - 14, 18, { align: 'right' })
-    doc.setFontSize(8)
-    doc.setFont('helvetica', 'normal')
-    doc.setTextColor(160, 160, 160)
-    doc.text(`#${invoiceNo}`, W - 14, 25, { align: 'right' })
-    doc.text(date, W - 14, 31, { align: 'right' })
-
-    // Bill to
-    doc.setFontSize(7)
-    doc.setFont('helvetica', 'bold')
-    doc.setTextColor(150, 150, 150)
-    doc.text('BILL TO', 14, 60)
-    doc.setFontSize(10)
-    doc.setFont('helvetica', 'bold')
-    doc.setTextColor(20, 20, 20)
-    doc.text(contactInfo.name || '—', 14, 68)
-    doc.setFontSize(9)
-    doc.setFont('helvetica', 'normal')
-    doc.setTextColor(100, 100, 100)
-    if (contactInfo.email) doc.text(contactInfo.email, 14, 74)
-    if (contactInfo.phone) doc.text(contactInfo.phone, 14, 80)
-
-    // Payment info
-    doc.setFontSize(7)
-    doc.setFont('helvetica', 'bold')
-    doc.setTextColor(150, 150, 150)
-    doc.text('PAYMENT INFO', W - 14, 60, { align: 'right' })
-    doc.setFontSize(9)
-    doc.setFont('helvetica', 'normal')
-    doc.setTextColor(100, 100, 100)
-    doc.text('Method: ABA KHQR', W - 14, 68, { align: 'right' })
-    if (txRef) doc.text(`Ref: ${txRef}`, W - 14, 74, { align: 'right' })
-    doc.text('Status: Pending Verification', W - 14, 80, { align: 'right' })
-
-    // Divider
-    doc.setDrawColor(230, 230, 230)
-    doc.line(14, 88, W - 14, 88)
-
-    // Items table
-    autoTable(doc, {
-      startY: 94,
-      head: [['Product', 'Color', 'Size', 'Qty', 'Unit Price', 'Subtotal']],
-      body: items.map(item => [
-        item.name,
-        item.color || '—',
-        item.size || '—',
-        String(item.quantity || item.qty || 1),
-        `$${Number(item.price).toFixed(2)}`,
-        `$${(Number(item.price) * (item.quantity || item.qty || 1)).toFixed(2)}`,
-      ]),
-      foot: [['', '', '', '', 'TOTAL', displayTotal]],
-      styles: { fontSize: 9, cellPadding: 4 },
-      headStyles: { fillColor: [10, 10, 10], textColor: 255, fontStyle: 'bold', fontSize: 8, cellPadding: 5 },
-      footStyles: { fillColor: [245, 245, 245], textColor: [10, 10, 10], fontStyle: 'bold', fontSize: 11 },
-      alternateRowStyles: { fillColor: [252, 252, 252] },
-      columnStyles: {
-        0: { cellWidth: 65 },
-        4: { halign: 'right' },
-        5: { halign: 'right', fontStyle: 'bold' },
-      },
-    })
-
-    const finalY = doc.lastAutoTable.finalY + 14
-    doc.setDrawColor(220, 220, 220)
-    doc.line(14, finalY, W - 14, finalY)
-    doc.setFontSize(8)
-    doc.setTextColor(180, 180, 180)
-    doc.text('Thank you for shopping with Luxe Wear! · www.luxewear.com', W / 2, finalY + 8, { align: 'center' })
-
-    doc.save(`LuxeWear-Invoice-${invoiceNo}.pdf`)
-  }
-
   return (
     <div className="max-w-2xl mx-auto px-4 py-10">
 
@@ -139,7 +41,7 @@ export default function OrderSuccess() {
       </div>
 
       {/* Invoice card */}
-      <div ref={invoiceRef} className="bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-sm">
+      <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-sm">
 
         {/* Header */}
         <div className="bg-zinc-950 px-8 py-7 flex justify-between items-start">
@@ -215,7 +117,7 @@ export default function OrderSuccess() {
 
       {/* Buttons */}
       <div className="flex flex-col sm:flex-row gap-3 mt-6">
-        <button onClick={downloadPDF}
+        <button onClick={() => downloadInvoicePDF({ id: orderId, contactInfo, items, total, currency, txRef, status: 'pending' })}
           className="flex-1 flex items-center justify-center gap-2 bg-black text-white py-3.5 rounded-xl text-sm font-medium hover:bg-zinc-800 transition-colors">
           <i className="fa-solid fa-file-pdf" />
           Download Invoice PDF
