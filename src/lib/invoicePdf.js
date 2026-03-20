@@ -109,5 +109,6 @@ export function downloadInvoicePDF(order) {
   doc.setTextColor(180, 180, 180)
   doc.text('Thank you for shopping with Luxe Wear!', W / 2, finalY + 8, { align: 'center' })
 
-  doc.save(`LuxeWear-Invoice-${invoiceNo}.pdf`)
+  const username = (info.name || 'Customer').replace(/\s+/g, '_')
+  doc.save(`${username}-Invoice-${invoiceNo}.pdf`)
 }
